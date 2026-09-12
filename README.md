@@ -4,48 +4,72 @@
 
 ---
 
----
-
 ## 📖 当前研习进度备忘
 * **当前阅读进度**：已精读至《Easy RL：强化学习教程》（蘑菇书）**第 58 页**
 * **当前知识板块**：第 3 章【表格型方法 (Tabular Methods)】
-  * 核心涉及：时序差分学习 (TD)、$ 步时序差分、悬崖寻路 (Cliff Walking) 问题及免模型控制 (GPI)
+  * 核心涉及：时序差分学习 (TD)、$n$ 步时序差分、悬崖寻路 (Cliff Walking) 问题及免模型控制 (GPI)
 * **下一阶段目标**：经典算法 **Sarsa** 与 **Q-Learning** 的核心机制与代码实战
-
-## 📂 仓库目录结构
-
-`	ext
-资料/
-├── 深度学习_D2L/
-│   ├── 教材/
-│   │   └── d2l-zh-pytorch.pdf           # 《动手学深度学习》电子教材 (Git LFS)
-│   └── 代码/
-│       ├── 01_张量操作基础.ipynb        # 张量初始化、切片、运算符与广播机制
-│       ├── 02_数据预处理.ipynb          # Pandas 缺失值处理与张量格式转换
-│       └── data/
-│           └── house_tiny.csv           # 预处理章节配套数据集
-│
-├── 强化学习_EasyRL/
-│   ├── 教材/
-│   │   └── EasyRL_v1.0.6.pdf            # 《Easy RL 蘑菇书》电子教材 (Git LFS)
-│   ├── 笔记/
-│   │   ├── EasyRL_第一章_课后习题精解.md # 第一章 1-1 至 1-10 思考题精解
-│   │   ├── 强化学习核心概念_价值函数与折扣因子.md # V/Q函数深度拆解及 AlphaGo 架构勘误
-│   │   └── EasyRL_第二章_马尔可夫决策过程核心笔记.md # 马尔可夫性、三级跳模型与贝尔曼方程
-│   └── 代码/
-│       └── 01_Gym环境交互测试.ipynb     # Gymnasium / Gym 交互环境实战 (CartPole, MountainCar)
-│
-├── .gitattributes                       # Git LFS 大文件托管配置
-├── .gitignore                           # 忽略缓存与中间文件
-└── README.md                            # 仓库导航索引
-`
 
 ---
 
-## 🛠️ 环境依赖要求
+## 📂 仓库目录结构
+
+```text
+资料/
+├── 深度学习_D2L/
+│   ├── 教材/
+│   │   └── d2l-zh-pytorch.pdf                # 《动手学深度学习》电子教材 (Git LFS)
+│   └── 代码/
+│       ├── 01_张量操作基础.ipynb             # 张量定义、切片、运算符与广播机制
+│       ├── 02_数据预处理.ipynb               # Pandas 缺失值处理与张量转换
+│       └── data/
+│           └── house_tiny.csv                # 预处理配套实验微型数据集
+│
+├── 强化学习_EasyRL/
+│   ├── 教材/
+│   │   └── EasyRL_v1.0.6.pdf                 # 《Easy RL 蘑菇书》电子教材 (Git LFS)
+│   ├── 笔记/
+│   │   ├── EasyRL_第一章_课后习题精解.md      # 1-1 至 1-10 思考题完整精解
+│   │   ├── 强化学习核心概念_价值函数与折扣因子.md # V/Q 函数深度拆解及 AlphaGo 架构探讨
+│   │   ├── EasyRL_第二章_马尔可夫决策过程核心笔记.md # 马尔可夫性、三级跳模型、贝尔曼方程与哲学思考
+│   │   └── EasyRL_第二章_课后习题精解.md      # 2-1 至 2-6 思考题完整精解
+│   ├── 代码/
+│   │   ├── 01_Gym环境交互测试.ipynb          # Gymnasium / Gym 交互实战 (CartPole, MountainCar)
+│   │   └── 02_策略迭代与价值迭代对比.ipynb   # 4x4 网格世界动态规划算法实测与策略图输出
+│   └── 价值迭代vs策略迭代动态对比.html        # 可在浏览器全屏交互的动态演示卡片
+│
+├── .gitattributes                            # Git LFS 大文件托管配置
+├── .gitignore                                # 忽略临时文件与缓存
+└── README.md                                 # 仓库导航索引
+```
+
+---
+
+## 🧭 快速链接导航
+
+### 1. [深度学习 (D2L)](./深度学习_D2L/)
+* **电子教材**：[d2l-zh-pytorch.pdf](./深度学习_D2L/教材/d2l-zh-pytorch.pdf)
+* **动手实战**：
+  * [01_张量操作基础.ipynb](./深度学习_D2L/代码/01_张量操作基础.ipynb)
+  * [02_数据预处理.ipynb](./深度学习_D2L/代码/02_数据预处理.ipynb)
+
+### 2. [强化学习 (Easy RL)](./强化学习_EasyRL/)
+* **电子教材**：[EasyRL_v1.0.6.pdf](./强化学习_EasyRL/教材/EasyRL_v1.0.6.pdf)
+* **核心笔记与课后习题**：
+  * [EasyRL 第一章课后习题精解](./强化学习_EasyRL/笔记/EasyRL_第一章_课后习题精解.md)
+  * [强化学习核心概念：价值函数与折扣因子](./强化学习_EasyRL/笔记/强化学习核心概念_价值函数与折扣因子.md)
+  * [EasyRL 第二章核心笔记（马尔可夫决策过程）](./强化学习_EasyRL/笔记/EasyRL_第二章_马尔可夫决策过程核心笔记.md)
+  * [EasyRL 第二章课后习题精解](./强化学习_EasyRL/笔记/EasyRL_第二章_课后习题精解.md)
+* **算法实战与可视化**：
+  * [01_Gym环境交互测试.ipynb](./强化学习_EasyRL/代码/01_Gym环境交互测试.ipynb)
+  * [02_策略迭代与价值迭代对比.ipynb](./强化学习_EasyRL/代码/02_策略迭代与价值迭代对比.ipynb)
+  * [价值迭代 vs 策略迭代动态交互对比 (HTML)](./强化学习_EasyRL/价值迭代vs策略迭代动态对比.html)
+
+---
+
+## 🛠️ 环境依赖配置
 * **Python**: 3.14+
-* **深度学习框架**: 	orch (PyTorch)
-* **强化学习环境**: gymnasium, gym, pygame-ce
-* **数据与绘图**: 
-umpy, pandas, matplotlib
-* **交互式编辑器**: Jupyter Notebook\n
+* **深度学习**: `torch` (PyTorch)
+* **强化学习**: `gymnasium`, `gym`, `pygame-ce`
+* **数据科学**: `numpy`, `pandas`, `matplotlib`
+* **交互开发**: `Jupyter Notebook`
