@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-2 select-none">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-2xl p-4 shadow-sm max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
+      <div>
+        <h2 class="text-base font-bold flex items-center gap-2">
+          <span>⚡</span> 价值迭代 vs 策略迭代 动态演变对比
+        </h2>
+        <p class="text-xs text-[var(--muted-foreground)]">从起点 S 走到终点 G（奖励 +100），观察中间过程到底能不能用</p>
+      </div>
+      <!-- Step controller -->
+      <div class="flex items-center gap-2">
+        <button id="prevBtn" onclick="changeStep(-1)" class="px-2.5 py-1 text-xs rounded-lg border border-[var(--border)] hover:bg-[var(--accent)] disabled:opacity-30 transition">上一步</button>
+        <span id="stepBadge" class="text-xs font-semibold px-2 py-1 rounded bg-[var(--primary)] text-[var(--primary-foreground)]">第 1 次迭代</span>
+        <button id="nextBtn" onclick="changeStep(1)" class="px-2.5 py-1 text-xs rounded-lg border border-[var(--border)] hover:bg-[var(--accent)] disabled:opacity-30 transition">下一步</button>
+      </div>
+    </div>
+
+    <!-- Grid comparison container -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Value Iteration Panel -->
+      <div class="border border-[var(--border)] rounded-xl p-3 bg-[var(--background)] flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-500 flex items-center gap-1">
+              <span>🌊</span> 价值迭代 (Value Iteration)
+            </span>
+            <span id="viStatus" class="text-[10px] px-1.5 py-0.5 rounded font-mono bg-red-500/10 text-red-500 font-semibold">不可用 (盲区)</span>
+          </div>
+          <!-- 1x5 Grid -->
+          <div class="grid grid-cols-5 gap-1.5 my-2">
+            <div id="vi-0" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)] font-bold">起点S</span>
+              <span id="vi-v0" class="text-xs font-mono font-bold text-slate-400">0</span>
+              <span id="vi-a0" class="text-sm">❓</span>
+            </div>
+            <div id="vi-1" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格1</span>
+              <span id="vi-v1" class="text-xs font-mono font-bold text-slate-400">0</span>
+              <span id="vi-a1" class="text-sm">❓</span>
+            </div>
+            <div id="vi-2" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格2</span>
+              <span id="vi-v2" class="text-xs font-mono font-bold text-slate-400">0</span>
+              <span id="vi-a2" class="text-sm">❓</span>
+            </div>
+            <div id="vi-3" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格3</span>
+              <span id="vi-v3" class="text-xs font-mono font-bold text-slate-400">0</span>
+              <span id="vi-a3" class="text-sm">❓</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 font-bold">
+              <span class="text-[10px]">终点G</span>
+              <span class="text-xs font-mono">+100</span>
+              <span class="text-sm">🏆</span>
+            </div>
+          </div>
+        </div>
+        <p id="viExplain" class="text-[11px] text-[var(--muted-foreground)] mt-2 leading-relaxed bg-[var(--card)] p-2 rounded border border-[var(--border)]"></p>
+      </div>
+
+      <!-- Policy Iteration Panel -->
+      <div class="border border-[var(--border)] rounded-xl p-3 bg-[var(--background)] flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-emerald-500 flex items-center gap-1">
+              <span>🚀</span> 策略迭代 (Policy Iteration)
+            </span>
+            <span id="piStatus" class="text-[10px] px-1.5 py-0.5 rounded font-mono bg-emerald-500/10 text-emerald-500 font-semibold">立即可用 (完整策略)</span>
+          </div>
+          <!-- 1x5 Grid -->
+          <div class="grid grid-cols-5 gap-1.5 my-2">
+            <div id="pi-0" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)] font-bold">起点S</span>
+              <span id="pi-v0" class="text-xs font-mono font-bold text-emerald-400">59</span>
+              <span id="pi-a0" class="text-sm text-emerald-500 font-bold">➡️</span>
+            </div>
+            <div id="pi-1" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格1</span>
+              <span id="pi-v1" class="text-xs font-mono font-bold text-emerald-400">65</span>
+              <span id="pi-a1" class="text-sm text-emerald-500 font-bold">➡️</span>
+            </div>
+            <div id="pi-2" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格2</span>
+              <span id="pi-v2" class="text-xs font-mono font-bold text-emerald-400">72</span>
+              <span id="pi-a2" class="text-sm text-emerald-500 font-bold">➡️</span>
+            </div>
+            <div id="pi-3" class="flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] transition-all">
+              <span class="text-[10px] text-[var(--muted-foreground)]">格3</span>
+              <span id="pi-v3" class="text-xs font-mono font-bold text-emerald-400">90</span>
+              <span id="pi-a3" class="text-sm text-emerald-500 font-bold">➡️</span>
+            </div>
+            <div class="flex flex-col items-center justify-center p-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 font-bold">
+              <span class="text-[10px]">终点G</span>
+              <span class="text-xs font-mono">+100</span>
+              <span class="text-sm">🏆</span>
+            </div>
+          </div>
+        </div>
+        <p id="piExplain" class="text-[11px] text-[var(--muted-foreground)] mt-2 leading-relaxed bg-[var(--card)] p-2 rounded border border-[var(--border)]"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let step = 1;
+    const maxSteps = 4;
+
+    const data = {
+      1: {
+        vi: { v: [0, 0, 0, 90], a: ['❓', '❓', '❓', '➡️'], active: [3] },
+        viExpl: "【波纹只传了第1步】只有紧挨终点的格3感应到了金子(90分)并学会往右走。起点S和前两格全是0，AI完全瞎眼(❓)，拿去上路会原地打转撞墙！",
+        viStatus: "不可用 (90%盲区)",
+        viStatusClass: "bg-red-500/10 text-red-500",
+        pi: { v: [30, 42, 55, 80], a: ['➡️', '➡️', '➡️', '➡️'], active: [0,1,2,3] },
+        piExpl: "【第1版完整打法】策略评估把整条路一口气推演到底！哪怕初始策略较笨，每个格子都有明确方向，小车能100%直接开进终点，是一套真实可用策略！",
+        piStatus: "完整可用 (初代可用策略)",
+        piStatusClass: "bg-emerald-500/10 text-emerald-500"
+      },
+      2: {
+        vi: { v: [0, 0, 81, 90], a: ['❓', '❓', '➡️', '➡️'], active: [2, 3] },
+        viExpl: "【波纹反向退到第2步】格2终于有分数了(81分)。但起点S依然是0，AI在起点仍然不知道该往哪走！中间过程仍是半成品。",
+        viStatus: "不可用 (前半段盲区)",
+        viStatusClass: "bg-red-500/10 text-red-500",
+        pi: { v: [55, 68, 79, 90], a: ['➡️', '➡️', '➡️', '➡️'], active: [0,1,2,3] },
+        piExpl: "【策略全面优化升级】策略改进发现更平滑高效的加速路线，分数全线上涨。每个格子方向依然完好，性能比第1版更强！",
+        piStatus: "更优可用 (V2.0进阶策略)",
+        piStatusClass: "bg-emerald-500/10 text-emerald-500"
+      },
+      3: {
+        vi: { v: [0, 72, 81, 90], a: ['❓', '➡️', '➡️', '➡️'], active: [1, 2, 3] },
+        viExpl: "【波纹推到格1】波纹终于扩散到格1了，但起点S依然没有被触及！火车还没通到起点，依然无法发车。",
+        viStatus: "不可用 (起点断轨)",
+        viStatusClass: "bg-amber-500/10 text-amber-500",
+        pi: { v: [65, 72, 81, 90], a: ['➡️', '➡️', '➡️', '➡️'], active: [0,1,2,3] },
+        piExpl: "【收敛达到最优】策略评估与改进交替收敛到理论极限，成为全局最完美驾驶员！",
+        piStatus: "全局最优策略 ★★★",
+        piStatusClass: "bg-blue-500/10 text-blue-500"
+      },
+      4: {
+        vi: { v: [65, 72, 81, 90], a: ['➡️', '➡️', '➡️', '➡️'], active: [0, 1, 2, 3] },
+        viExpl: "【波纹终于贯通起点！】第4步波纹才终于倒推回起点S，铁轨全线铺通。直到这一步收敛，价值迭代的策略才真正有意义！",
+        viStatus: "终于可用 (全线打通) ★",
+        viStatusClass: "bg-emerald-500/10 text-emerald-500",
+        pi: { v: [65, 72, 81, 90], a: ['➡️', '➡️', '➡️', '➡️'], active: [0,1,2,3] },
+        piExpl: "此时策略迭代早已收敛并稳定，两者在终点殊途同归。",
+        piStatus: "全局最优策略 ★★★",
+        piStatusClass: "bg-blue-500/10 text-blue-500"
+      }
+    };
+
+    function render() {
+      const cur = data[step];
+      document.getElementById('stepBadge').innerText = `第 ${step} 次迭代`;
+      document.getElementById('prevBtn').disabled = (step === 1);
+      document.getElementById('nextBtn').disabled = (step === maxSteps);
+
+      // Render VI
+      for(let i=0; i<4; i++) {
+        const valEl = document.getElementById(`vi-v${i}`);
+        const actEl = document.getElementById(`vi-a${i}`);
+        const box = document.getElementById(`vi-${i}`);
+        valEl.innerText = cur.vi.v[i];
+        actEl.innerText = cur.vi.a[i];
+        if (cur.vi.active.includes(i)) {
+          box.className = "flex flex-col items-center justify-center p-2 rounded-lg border border-amber-500/50 bg-amber-500/10 transition-all";
+          valEl.className = "text-xs font-mono font-bold text-amber-500";
+        } else {
+          box.className = "flex flex-col items-center justify-center p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] opacity-40 transition-all";
+          valEl.className = "text-xs font-mono font-bold text-slate-400";
+        }
+      }
+      document.getElementById('viExplain').innerText = cur.viExpl;
+      const viStatusEl = document.getElementById('viStatus');
+      viStatusEl.innerText = cur.viStatus;
+      viStatusEl.className = `text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold ${cur.viStatusClass}`;
+
+      // Render PI
+      for(let i=0; i<4; i++) {
+        document.getElementById(`pi-v${i}`).innerText = cur.pi.v[i];
+        document.getElementById(`pi-a${i}`).innerText = cur.pi.a[i];
+      }
+      document.getElementById('piExplain').innerText = cur.piExpl;
+      const piStatusEl = document.getElementById('piStatus');
+      piStatusEl.innerText = cur.piStatus;
+      piStatusEl.className = `text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold ${cur.piStatusClass}`;
+    }
+
+    function changeStep(delta) {
+      step = Math.max(1, Math.min(maxSteps, step + delta));
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>
