@@ -173,7 +173,196 @@ Sarsa 和 Q 学习的更新公式是一样的，区别只在**目标计算的部
 
 ---
 
-## 4. 页码溯源表
+## 4. Q 学习解决悬崖寻路实验（3.5，p.65–68）
+
+### 4.1 实验环境：CliffWalking（p.65–66）
+
+* OpenAI Gym 开发的悬崖寻路（cliff walking）环境，是一个迷宫类问题（图 3.36）；
+* **4×12 网格**：起点＝左下角编号 36，终点＝右下角编号 47，悬崖＝编号 37~46；
+* 智能体每次可在上、下、左、右 4 个方向移动一步（动作 0/1/2/3），每移动一步得 **−1**；
+* 三条规则（p.66）：
+  1. 不能移出网格：想执行移出网格的动作时原地不动，但仍得 **−1**；
+  2. 掉入悬崖：立即回到起点位置（36），得 **−100**（**注意：不结束回合，继续走**）；
+  3. 到达终点：该回合结束，总奖励为各步奖励之和；
+* 最少 13 步到达终点 → **最优每回合总奖励 = −13**，这是判断算法是否收敛的标准。
+
+### 4.2 gymnasium 环境适配（实测 1.3.0）
+
+教材代码基于 gym 0.x 旧接口，在 gymnasium 1.3.0 上需 4 处适配：
+
+| 教材写法（gym 0.21） | gymnasium 1.3.0 写法 | 原因 |
+| :--- | :--- | :--- |
+| `gym.make('CliffWalking-v0')` | `gym.make('CliffWalking-v1')` | v0 已被弃用 |
+| `env.seed(1)` | `np.random.seed(1)` | env.seed() 已移除 |
+| `state = env.reset()` | `state, _ = env.reset()` | reset() 返回 (obs, info) |
+| `next_state, reward, done, _ = env.step(a)` | `next_state, reward, terminated, truncated, _ = env.step(a)`；`done = terminated or truncated` | step() 返回 5 元组 |
+
+> gymnasium 与 numpy 2.x 原生兼容，**不需要** np.bool8 兼容补丁（那是旧 gym 0.26 才需要的）。
+
+### 4.3 代码结构与接口五步（p.66）
+
+教材把训练抽象成 5 步接口：**① 初始化环境和智能体 → ② 每个回合智能体选动作 → ③ 环境反馈下一状态和奖励 → ④ 智能体更新策略 → ⑤ 多回合后收敛，保存模型、画图分析**。
+
+| 代码单元 | 职责 | 对应教材 |
+| :--- | :--- | :--- |
+| 单元 1 导入+创建环境 | 初始化环境（48 状态 / 4 动作 / 起点 36） | 3.5.1（p.65–66） |
+| 单元 2 QLearning 类 | 定义智能体：choose_action（选动作）+ update（更新） | 3.5.3（p.67–68） |
+| 单元 3 训练主循环 | 跑 500 回合，记录 rewards 与滑动平均 | 3.5.2（p.66–67） |
+| 单元 4 画训练曲线 | 可视化收敛情况 | 图 3.37（p.68） |
+| 单元 5 测试 | 30 回合纯 argmax 验证 | 3.5.4（p.68） |
+
+### 4.4 QLearning 类详解（p.67–68）
+
+**__init__**：`Q_table = np.zeros((n_states, n_actions))`——48×4 全 0 的 Q 表格（行=状态，列=动作）。
+
+**choose_action（ε-贪心，p.67）**：
+
+```python
+def choose_action(self, state):
+    self.sample_count += 1
+    self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
+        math.exp(-1. * self.sample_count / self.epsilon_decay)
+    if np.random.uniform(0, 1) > self.epsilon:
+        return np.argmax(self.Q_table[state])   # 利用：取 Q 值最大动作
+    return np.random.choice(self.n_actions)      # 探索：随机动作
+```
+
+* ε 随采样次数**指数递减**：$\varepsilon = \varepsilon_{end} + (\varepsilon_{start}-\varepsilon_{end}) \cdot \exp(-\text{sample\_count}/\varepsilon_{decay})$——前期多探索、后期多利用；
+* 随机数 > ε → 利用（argmax）；否则 → 探索（随机）。
+
+**update（式 3.33，p.68）**：
+
+```python
+def update(self, state, action, reward, next_state, done):
+    Q_predict = self.Q_table[state][action]
+    if done:
+        Q_target = reward                        # 终止状态：目标值 = 本步奖励
+    else:
+        Q_target = reward + self.gamma * np.max(self.Q_table[next_state])
+    self.Q_table[state][action] += self.lr * (Q_target - Q_predict)
+```
+
+* Q_predict＝当前 Q 值；Q_target＝TD 目标（$R + \gamma \max_a Q(S',a)$）；`+= lr × (目标−当前)`＝软更新；
+* **终止状态时**获取不到下一个动作，直接令 `Q_target = reward`（p.68）。
+
+### 4.5 训练主循环要点（p.66–67）
+
+* 每回合：reset 回起点 → 循环（选动作 → step → update → 状态推进 → 累计奖励）→ 到终点（done）结束；
+* **滑动平均**：`ma = 0.9 × 上一个ma + 0.1 × 本回合奖励`（p.67）——平滑单回合奖励的振荡，便于观察收敛趋势；
+* **max_steps 防死循环保护**（教材代码没有）：因为掉崖不结束回合，若策略没学好可能永远到不了终点，故每回合加步数上限（如 200 步）强制结束。
+
+### 4.6 测试与验证（p.68）
+
+* 测试 20~50 回合（教材用 30 回合），**测试时直接 `np.argmax(Q_table[state])`、不探索**，专门检验学到的策略；
+* 训练收敛后，30 个测试回合全部 = **−13**，说明智能体每次都走最优的 13 步到达终点（图 3.38 效果）；
+* 若测试经常掉崖（奖励远差于 −13）：加大 train_eps 或调大 epsilon_decay。
+
+### 4.7 完整可运行代码（gymnasium 1.3.0 适配版）
+
+```python
+# ===== 单元 1：导入 + 创建环境（教材 3.5.1，p.65-66） =====
+import numpy as np
+import math, warnings
+import gymnasium as gym
+warnings.filterwarnings('ignore')
+
+env = gym.make('CliffWalking-v1')   # gymnasium 1.3.0 用 v1
+np.random.seed(1)                   # 固定随机种子，可复现
+n_states = env.observation_space.n  # 48
+n_actions = env.action_space.n      # 4
+print(f"状态数：{n_states}，动作数：{n_actions}")
+state, _ = env.reset()              # reset() 返回 (obs, info)
+print(f"初始状态：{state}")          # 预期 36
+
+# ===== 单元 2：QLearning 类（教材 3.5.3，p.67-68） =====
+class QLearning:
+    def __init__(self, n_states, n_actions, cfg):
+        self.n_actions = n_actions
+        self.lr = cfg['lr']
+        self.gamma = cfg['gamma']
+        self.epsilon_start = cfg['epsilon_start']
+        self.epsilon_end = cfg['epsilon_end']
+        self.epsilon_decay = cfg['epsilon_decay']
+        self.sample_count = 0
+        self.Q_table = np.zeros((n_states, n_actions))
+
+    def choose_action(self, state):
+        self.sample_count += 1
+        self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
+            math.exp(-1. * self.sample_count / self.epsilon_decay)
+        if np.random.uniform(0, 1) > self.epsilon:
+            return np.argmax(self.Q_table[state])
+        return np.random.choice(self.n_actions)
+
+    def update(self, state, action, reward, next_state, done):
+        Q_predict = self.Q_table[state][action]
+        if done:
+            Q_target = reward
+        else:
+            Q_target = reward + self.gamma * np.max(self.Q_table[next_state])
+        self.Q_table[state][action] += self.lr * (Q_target - Q_predict)
+
+# ===== 单元 3：训练主循环（教材 3.5.2，p.66-67） =====
+cfg = {'lr': 0.1, 'gamma': 0.9, 'epsilon_start': 0.9, 'epsilon_end': 0.01, 'epsilon_decay': 200}
+agent = QLearning(n_states, n_actions, cfg)
+
+train_eps = 500
+max_steps = 200        # 防死循环保护（教材原代码没有）
+rewards, ma_rewards = [], []
+
+for i_ep in range(train_eps):
+    ep_reward = 0
+    state, _ = env.reset()
+    for step in range(max_steps):
+        action = agent.choose_action(state)
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+        agent.update(state, action, reward, next_state, done)
+        state = next_state
+        ep_reward += reward
+        if done:
+            break
+    rewards.append(ep_reward)
+    ma_rewards.append(ma_rewards[-1] * 0.9 + ep_reward * 0.1 if ma_rewards else ep_reward)
+
+print("训练最后10回合奖励：", rewards[-10:])
+
+# ===== 单元 4：画训练曲线（图 3.37，p.68） =====
+try:
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(8, 4))
+    plt.plot(rewards, alpha=0.4, label='每回合奖励')
+    plt.plot(ma_rewards, label='滑动平均(0.9/0.1)')
+    plt.axhline(-13, color='r', linestyle='--', label='理论最优 -13')
+    plt.xlabel('回合数'); plt.ylabel('奖励'); plt.legend(); plt.show()
+except ImportError:
+    print('未安装 matplotlib，跳过画图')
+
+# ===== 单元 5：测试 30 回合（教材 3.5.4，p.68） =====
+test_eps = 30
+test_rewards = []
+for _ in range(test_eps):
+    ep_reward = 0
+    state, _ = env.reset()
+    for step in range(max_steps):
+        action = np.argmax(agent.Q_table[state])   # 测试纯利用，不探索
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        state = next_state
+        ep_reward += reward
+        if terminated or truncated:
+            break
+    test_rewards.append(ep_reward)
+
+print("测试30回合奖励：", test_rewards)
+print("测试平均奖励：", round(float(np.mean(test_rewards)), 2), "（理论最优 -13）")
+env.close()
+```
+
+> 实测结果（本机 gymnasium 1.3.0）：训练 500 回合后收敛，测试 30 回合全部 −13，平均 −13.0，与教材图 3.37/3.38 一致。
+
+---
+
+## 5. 页码溯源表
 
 | 内容 | 教材页码 | PDF 页码 |
 | :--- | :--- | :--- |
@@ -183,10 +372,14 @@ Sarsa 和 Q 学习的更新公式是一样的，区别只在**目标计算的部
 | 异策略概念：目标策略/行为策略、图 3.31、图 3.32、异策略好处 | p.63 | PDF 第 71 页 |
 | Q 学习公式推导（式 3.30–3.32）、图 3.33 伪代码对比、图 3.34a、Q 学习大胆 | p.64 | PDF 第 72 页 |
 | 图 3.34b（Q 学习流程拆解）、3.4.3 同策略与异策略的区别、图 3.35 | p.65 | PDF 第 73 页 |
+| 3.5 环境规则与创建环境（图 3.36） | p.65–66 | PDF 第 74–75 页 |
+| 3.5.2 接口五步、训练主循环、滑动平均 | p.66–67 | PDF 第 75–76 页 |
+| 3.5.3 QLearning 类、choose_action、update 与式 3.33 | p.67–68 | PDF 第 76–77 页 |
+| 3.5.4 结果分析、图 3.37/3.38、测试 30 回合 | p.68 | PDF 第 77 页 |
 
 ---
 
-## 5. 常见问答速查（对应课后习题视角）
+## 6. 常见问答速查（对应课后习题视角）
 
 **Q：请描述基于 Sarsa 算法的智能体的学习过程。（习题 3-3）**
 
@@ -198,4 +391,4 @@ A：① Q 学习是异策略 TD 学习，Sarsa 是同策略 TD 学习；② Sars
 
 ---
 
-*笔记整理基于《Easy RL：强化学习教程》v1.0.6 第 3.4 节，页码为教材印刷页码。*
+*笔记整理基于《Easy RL：强化学习教程》v1.0.6 第 3.4–3.5 节，页码为教材印刷页码。*
