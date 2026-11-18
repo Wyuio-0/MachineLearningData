@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>概率统计核心精讲：协方差与相关系数（含动态交互）</title>
+    <!-- MathJax 用于优雅渲染数学公式 -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --primary-dark: #1d4ed8;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --warning-bg: #fffbeb;
+            --warning-border: #fef3c7;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.7;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        /* 顶部 Header */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding: 2.5rem 1.5rem;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: #bfdbfe;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* 内容卡片 */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 0.5rem;
+        }
+
+        .card h2 .badge {
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.85rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 1.5rem 0 0.75rem 0;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #334155;
+        }
+
+        /* 重点高亮框 */
+        .callout {
+            border-left: 4px solid var(--primary);
+            background-color: var(--primary-light);
+            padding: 1rem 1.25rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin: 1.25rem 0;
+            font-size: 0.98rem;
+        }
+
+        .callout.warning {
+            border-left-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .callout.success {
+            border-left-color: var(--success);
+            background-color: var(--success-bg);
+        }
+
+        /* 交互实验区 */
+        .interactive-zone {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .interactive-zone {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            background: #fafafa;
+        }
+
+        .controls-panel {
+            background: var(--bg-page);
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .control-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #cbd5e1;
+            outline: none;
+            accent-color: var(--primary);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .metric-box {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .metric-box .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .metric-box .value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 0.2rem;
+            font-family: monospace;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg-page);
+            font-weight: 600;
+            color: #475569;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        /* 象限图解 */
+        .quadrant-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .quadrant-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .quadrant-item.pos {
+            background-color: var(--success-bg);
+            border-color: #a7f3d0;
+        }
+
+        .quadrant-item.neg {
+            background-color: var(--danger-bg);
+            border-color: #fecaca;
+        }
+
+        .quadrant-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* 底部 */
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <h1>概率统计：协方差 (Covariance) 全景指南</h1>
+        <p>从生活直觉、四象限几何，到动态交互仿真与高维机器学习深度联动</p>
+    </header>
+
+    <!-- 1. 直觉理解 -->
+    <div class="card">
+        <h2><span class="badge">01</span> 直觉理解：从“个人波动”到“协同起舞”</h2>
+        <p>在统计学中，我们常用<strong>方差（Variance）</strong>来衡量单个变量自身的离散程度。但现实世界中，事物往往是相互联动的：</p>
+        <ul>
+            <li>一个人<strong>身高</strong>偏高时，他的<strong>体重</strong>往往也偏重；</li>
+            <li>炎炎夏日<strong>气温</strong>升高时，冷饮店的<strong>冰淇淋销量</strong>大幅上涨；</li>
+            <li>手机<strong>定价</strong>定得越高，大众市场的<strong>购买销量</strong>反而缩减。</li>
+        </ul>
+        <div class="callout">
+            <strong>核心思想：</strong>
+            方差回答的是<em>“我一个人波动得有多厉害？”</em><br>
+            协方差回答的是<em>“我和你一起运动时，是朝同一个方向走，还是背道而驰？”</em>
+        </div>
+    </div>
+
+    <!-- 2. 交互实验区 -->
+    <div class="card">
+        <h2><span class="badge">02</span> 动手实验室：动态感受协方差与相关系数</h2>
+        <p>拖动下方滑块调整两变量间的<strong>真实相关性</strong>，观察右侧散点图的形态分布，以及实时计算的协方差与皮尔逊相关系数：</p>
+        
+        <div class="interactive-zone">
+            <div class="canvas-container">
+                <canvas id="scatterCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label>
+                        <span>设定相关趋势 (Correlation):</span>
+                        <span id="corrVal" style="color: var(--primary);">+0.80</span>
+                    </label>
+                    <input type="range" id="corrSlider" min="-1" max="1" step="0.05" value="0.8">
+                </div>
+                <div class="control-group">
+                    <label>
+                        <span>噪声扰动大小 (Noise):</span>
+                        <span id="noiseVal">0.30</span>
+                    </label>
+                    <input type="range" id="noiseSlider" min="0.05" max="1" step="0.05" value="0.3">
+                </div>
+                <button id="regenBtn" style="width: 100%; padding: 0.5rem; background: var(--primary); color: white; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer;">重新随机采样 (200个点)</button>
+
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="label">协方差 Cov(X, Y)</div>
+                        <div class="value" id="covMetric">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="label">相关系数 ρ(X, Y)</div>
+                        <div class="value" id="corrMetric">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="label">方差 Var(X)</div>
+                        <div class="value" id="varXMetric">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="label">方差 Var(Y)</div>
+                        <div class="value" id="varYMetric">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem;">
+            注：绿色区域为一、三象限（乘积为正，贡献正相关）；浅红区域为二、四象限（乘积为负，贡献负相关）。
+        </p>
+    </div>
+
+    <!-- 3. 几何原理与公式推导 -->
+    <div class="card">
+        <h2><span class="badge">03</span> 数学定义与象限几何拆解</h2>
+        <p>设随机变量 \(X\) 与 \(Y\) 的均值分别为 \(\mu_X = \mathbb{E}[X]\) 和 \(\mu_Y = \mathbb{E}[Y]\)。它们的协方差定义为：</p>
+        
+        <div style="background: var(--bg-page); padding: 1rem; border-radius: 0.5rem; text-align: center; margin: 1rem 0;">
+            $$\operatorname{Cov}(X, Y) = \mathbb{E}\Big[\big(X - \mathbb{E}[X]\big)\big(Y - \mathbb{E}[Y]\big)\Big]$$
+        </div>
+
+        <h3>为什么要把离均差乘起来？</h3>
+        <p>观察乘积项 \((X - \mu_X)(Y - \mu_Y)\)，以中心均值点 \((\mu_X, \mu_Y)\) 将平面划分为四个象限：</p>
+
+        <div class="quadrant-grid">
+            <div class="quadrant-item pos">
+                <strong>第一象限：(X偏大, Y偏大)</strong>
+                \((+) \times (+) = (+)\)<br>
+                两人同时高于均值，乘积为正。
+            </div>
+            <div class="quadrant-item neg">
+                <strong>第二象限：(X偏小, Y偏大)</strong>
+                \((-) \times (+) = (-)\)<br>
+                一个低于均值一个高于均值，乘积为负。
+            </div>
+            <div class="quadrant-item pos">
+                <strong>第三象限：(X偏小, Y偏小)</strong>
+                \((-) \times (-) = (+)\)<br>
+                两人同时低于均值（负负得正！），乘积仍为正！
+            </div>
+            <div class="quadrant-item neg">
+                <strong>第四象限：(X偏大, Y偏小)</strong>
+                \((+) \times (-) = (-)\)<br>
+                一个高于均值一个低于均值，乘积为负。
+            </div>
+        </div>
+
+        <p>最后取期望（平均）：若大部分数据点分布在一、三象限，正数占主导，\(\operatorname{Cov}(X, Y) > 0\)（同甘共苦）；若集中在二、四象限，负数占主导，\(\operatorname{Cov}(X, Y) < 0\)（背道而驰）。</p>
+
+        <h3>常用展开计算公式（两行优雅推导）</h3>
+        <p>做题和程序实现时，最常用的等价公式是：</p>
+        <div style="background: var(--bg-page); padding: 0.75rem; border-radius: 0.5rem; text-align: center;">
+            $$\operatorname{Cov}(X, Y) = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]$$
+        </div>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">
+            <em>推导简析：</em>
+            \(\mathbb{E}[(X - \mu_X)(Y - \mu_Y)] = \mathbb{E}[XY - \mu_X Y - \mu_Y X + \mu_X \mu_Y] = \mathbb{E}[XY] - \mu_X \mu_Y - \mu_Y \mu_X + \mu_X \mu_Y = \mathbb{E}[XY] - \mu_X \mu_Y\)。
+        </p>
+    </div>
+
+    <!-- 4. 核心性质表 -->
+    <div class="card">
+        <h2><span class="badge">04</span> 核心运算性质大全</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">性质名称</th>
+                    <th style="width: 45%;">数学表达式</th>
+                    <th style="width: 30%;">直观物理含义</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>自协方差</strong></td>
+                    <td>\(\operatorname{Cov}(X, X) = \operatorname{Var}(X)\)</td>
+                    <td>方差是协方差在“自己与自己比较”时的特殊情况</td>
+                </tr>
+                <tr>
+                    <td><strong>对称性</strong></td>
+                    <td>\(\operatorname{Cov}(X, Y) = \operatorname{Cov}(Y, X)\)</td>
+                    <td>\(X\) 对 \(Y\) 的协同等于 \(Y\) 对 \(X\) 的协同</td>
+                </tr>
+                <tr>
+                    <td><strong>常数不变性</strong></td>
+                    <td>\(\operatorname{Cov}(X, c) = 0\)</td>
+                    <td>恒定不变的常数无法产生任何协同联动</td>
+                </tr>
+                <tr>
+                    <td><strong>线性放缩</strong></td>
+                    <td>\(\operatorname{Cov}(aX + b, cY + d) = ac\operatorname{Cov}(X, Y)\)</td>
+                    <td>加常数平移不影响波动；乘常数等比例放大</td>
+                </tr>
+                <tr>
+                    <td><strong>可加性 (双线性)</strong></td>
+                    <td>\(\operatorname{Cov}(X_1 + X_2, Y) = \operatorname{Cov}(X_1, Y) + \operatorname{Cov}(X_2, Y)\)</td>
+                    <td>可像多项式乘法一样展开分配</td>
+                </tr>
+                <tr>
+                    <td><strong>和的方差展开</strong></td>
+                    <td>\(\operatorname{Var}(X \pm Y) = \operatorname{Var}(X) + \operatorname{Var}(Y) \pm 2\operatorname{Cov}(X, Y)\)</td>
+                    <td>完全等价于向量模长的余弦定理展开！</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout warning">
+            <strong>辨析陷阱：独立 vs 线性不相关</strong><br>
+            • <strong>独立 \(\implies\) 协方差为 0</strong>：两事件互不干涉，必然不相关。<br>
+            • <strong>协方差为 0 \(\not\implies\) 独立</strong>！协方差只能检测<strong>线性相关</strong>。例如 \(X \sim U(-1, 1)\), \(Y = X^2\)，虽然 \(Y\) 完全由 \(X\) 决定（极度依赖），但其 \(\operatorname{Cov}(X, Y) = 0\)。
+        </div>
+    </div>
+
+    <!-- 5. 解决量纲软肋：皮尔逊相关系数 -->
+    <div class="card">
+        <h2><span class="badge">05</span> 消除量纲软肋：皮尔逊相关系数 (\(\rho\))</h2>
+        <p>协方差有一个致命弱点：<strong>数值大小受度量单位（量纲）直接控制</strong>。
+        若将身高的单位从“米”换为“毫米”，数值瞬间暴增 1000 倍，协方差数值也会被放大 1000 倍，但这根本不意味着两者相关性增强了！</p>
+
+        <p>为摆脱单位限制，统计学家引入各自的标准差进行<strong>归一化（无量纲化）</strong>，得到<strong>皮尔逊相关系数</strong>：</p>
+        <div style="background: var(--bg-page); padding: 1rem; border-radius: 0.5rem; text-align: center; margin: 1rem 0;">
+            $$\rho_{XY} = \frac{\operatorname{Cov}(X, Y)}{\sigma_X \sigma_Y} = \frac{\operatorname{Cov}(X, Y)}{\sqrt{\operatorname{Var}(X)}\sqrt{\operatorname{Var}(Y)}} \in [-1, 1]$$
+        </div>
+
+        <ul>
+            <li>\(\rho = +1\)：<strong>完全正线性相关</strong>（所有点精准落在一条斜率为正的直线上）；</li>
+            <li>\(\rho = -1\)：<strong>完全负线性相关</strong>（所有点精准落在一条斜率为负的直线上）；</li>
+            <li>\(\rho = 0\)：<strong>无线性相关趋势</strong>。</li>
+        </ul>
+    </div>
+
+    <!-- 6. 深度学习联系 -->
+    <div class="card">
+        <h2><span class="badge">06</span> 深度学习中的协方差矩阵 (与 Softmax 联动)</h2>
+        <p>在多维机器学习中，一个样本通常有 \(d\) 个特征。我们将所有特征两两之间的协方差组织为一个对称矩阵——<strong>协方差矩阵 \(\mathbf{\Sigma}\)</strong>：</p>
+        
+        <div style="background: var(--bg-page); padding: 1rem; border-radius: 0.5rem; text-align: center; margin: 1rem 0;">
+            $$\mathbf{\Sigma} = \mathbb{E}\big[(\mathbf{X} - \boldsymbol{\mu})(\mathbf{X} - \boldsymbol{\mu})^\top\big] = \begin{bmatrix}
+            \operatorname{Var}(X_1) & \operatorname{Cov}(X_1, X_2) & \dots \\
+            \operatorname{Cov}(X_2, X_1) & \operatorname{Var}(X_2) & \dots \\
+            \vdots & \vdots & \ddots
+            \end{bmatrix}$$
+        </div>
+
+        <div class="callout success">
+            <strong>串联《动手学深度学习》第 3.4 节 Softmax 回归：</strong><br>
+            在 3.4 节课后习题 1 中，分类独热向量 \(\mathbf{Z} \sim \operatorname{Multinomial}(1, \hat{\mathbf{y}})\) 的协方差矩阵正是：
+            <ul>
+                <li>对角线（同类别）：\(\operatorname{Var}(Z_j) = \hat{y}_j(1 - \hat{y}_j) > 0\)；</li>
+                <li>非对角线（异类别）：\(\operatorname{Cov}(Z_j, Z_k) = -\hat{y}_j \hat{y}_k < 0\)（恒为负数！）。</li>
+            </ul>
+            <strong>背后的几何直觉：</strong>因为所有类别的概率和被锁死在 1（\(\sum_k \hat{y}_k = 1\)），属于典型的<strong>零和博弈</strong>。类别 \(j\) 发生，必定压制类别 \(k\) 的发生，两者天然处于“背道而驰”的此消彼长中，因此协方差必定为负！
+        </div>
+    </div>
+
+    <!-- 底部版权与导航 -->
+    <footer>
+        <p>《动手学深度学习》系统化辅导材料 · 概率统计专题</p>
+        <p style="margin-top: 0.25rem;">本地生成文件：深度学习_D2L/笔记/协方差与相关系数交互精讲.html</p>
+    </footer>
+</div>
+
+<!-- 交互脚本 -->
+<script>
+    const canvas = document.getElementById('scatterCanvas');
+    const ctx = canvas.getContext('2d');
+    const corrSlider = document.getElementById('corrSlider');
+    const noiseSlider = document.getElementById('noiseSlider');
+    const corrVal = document.getElementById('corrVal');
+    const noiseVal = document.getElementById('noiseVal');
+    const regenBtn = document.getElementById('regenBtn');
+
+    const covMetric = document.getElementById('covMetric');
+    const corrMetric = document.getElementById('corrMetric');
+    const varXMetric = document.getElementById('varXMetric');
+    const varYMetric = document.getElementById('varYMetric');
+
+    let N = 200;
+    let baseNoiseX = [];
+    let baseNoiseY = [];
+
+    // 高斯随机采样 (Box-Muller)
+    function randn() {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function initNoise() {
+        baseNoiseX = [];
+        baseNoiseY = [];
+        for (let i = 0; i < N; i++) {
+            baseNoiseX.push(randn());
+            baseNoiseY.push(randn());
+        }
+    }
+
+    function computeStats(x, y) {
+        const n = x.length;
+        let sumX = 0, sumY = 0;
+        for (let i = 0; i < n; i++) {
+            sumX += x[i];
+            sumY += y[i];
+        }
+        const meanX = sumX / n;
+        const meanY = sumY / n;
+
+        let varX = 0, varY = 0, covXY = 0;
+        for (let i = 0; i < n; i++) {
+            const dx = x[i] - meanX;
+            const dy = y[i] - meanY;
+            varX += dx * dx;
+            varY += dy * dy;
+            covXY += dx * dy;
+        }
+        varX /= (n - 1);
+        varY /= (n - 1);
+        covXY /= (n - 1);
+
+        const r = covXY / (Math.sqrt(varX) * Math.sqrt(varY));
+        return { meanX, meanY, varX, varY, covXY, r };
+    }
+
+    function draw() {
+        const targetR = parseFloat(corrSlider.value);
+        const noiseScale = parseFloat(noiseSlider.value);
+        corrVal.innerText = (targetR >= 0 ? '+' : '') + targetR.toFixed(2);
+        noiseVal.innerText = noiseScale.toFixed(2);
+
+        // 生成具有指定相关性的数据点: Y = targetR * X + sqrt(1 - targetR^2) * noise
+        const x = [];
+        const y = [];
+        const coeff = Math.sqrt(Math.max(0, 1 - targetR * targetR));
+
+        for (let i = 0; i < N; i++) {
+            const xi = baseNoiseX[i];
+            const yi = targetR * xi + coeff * baseNoiseY[i] * noiseScale;
+            x.push(xi);
+            y.push(yi);
+        }
+
+        const stats = computeStats(x, y);
+
+        // 更新仪表盘指标
+        covMetric.innerText = stats.covXY.toFixed(3);
+        corrMetric.innerText = stats.r.toFixed(3);
+        varXMetric.innerText = stats.varX.toFixed(3);
+        varYMetric.innerText = stats.varY.toFixed(3);
+
+        // 绘制画布
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const scale = 45; // 像素比例尺
+
+        // 绘制四象限背景色
+        // 第一象限 (右上: 绿色)
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+        ctx.fillRect(centerX, 0, centerX, centerY);
+        // 第三象限 (左下: 绿色)
+        ctx.fillRect(0, centerY, centerX, centerY);
+        // 第二象限 (左上: 浅红)
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+        ctx.fillRect(0, 0, centerX, centerY);
+        // 第四象限 (右下: 浅红)
+        ctx.fillRect(centerX, centerY, centerX, centerY);
+
+        // 绘制坐标轴
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.5;
+        // X轴
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(w, centerY);
+        ctx.stroke();
+        // Y轴
+        ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, h);
+        ctx.stroke();
+
+        // 坐标轴文字
+        ctx.fillStyle = '#64748b';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('+ (+,+)', w - 45, 20);
+        ctx.fillText('- (-,+)', 10, 20);
+        ctx.fillText('+ (-,-)', 10, h - 15);
+        ctx.fillText('- (+,-)', w - 45, h - 15);
+        ctx.fillText('X', w - 15, centerY - 6);
+        ctx.fillText('Y', centerX + 6, 15);
+
+        // 绘制散点
+        for (let i = 0; i < N; i++) {
+            const px = centerX + x[i] * scale;
+            const py = centerY - y[i] * scale; // Y轴反转
+
+            ctx.beginPath();
+            ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+            // 根据所在象限赋色
+            if (x[i] * y[i] >= 0) {
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.8)'; // 正相关绿色
+            } else {
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.8)'; // 负相关红色
+            }
+            ctx.fill();
+        }
+    }
+
+    corrSlider.addEventListener('input', draw);
+    noiseSlider.addEventListener('input', draw);
+    regenBtn.addEventListener('click', () => {
+        initNoise();
+        draw();
+    });
+
+    // 初始化运行
+    initNoise();
+    draw();
+</script>
+</body>
+</html>
